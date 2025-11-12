@@ -5,155 +5,849 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Nano Banana Image Generator with G-code</title>
     <style>
+        :root {
+            --primary: #7c3aed;
+            --primary-dark: #6d28d9;
+            --secondary: #10b981;
+            --background: #0f0f23;
+            --surface: #1a1b2e;
+            --surface-light: #252641;
+            --text: #e2e8f0;
+            --text-secondary: #94a3b8;
+            --error: #ef4444;
+            --success: #10b981;
+            --border: #374151;
+            --shadow: rgba(0, 0, 0, 0.3);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            transition: background-color 0.3s, color 0.3s;
+        }
+
         body { 
-            font-family: sans-serif; 
-            max-width: 600px; 
-            margin: 50px auto; 
-            padding: 20px; 
-            background-color: #f5f5f5;
+            font-family: 'Segoe UI', system-ui, sans-serif; 
+            background: var(--background);
+            color: var(--text);
+            line-height: 1.6;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            position: relative;
+            overflow-x: hidden;
         }
+
+        /* Анимированный фон с эффектом Liquid Glass */
+        .liquid-bg {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            overflow: hidden;
+        }
+
+        .liquid-blob {
+            position: absolute;
+            border-radius: 50%;
+            filter: blur(40px);
+            opacity: 0.7;
+            animation: float 8s ease-in-out infinite;
+        }
+
+        .blob-1 {
+            width: 500px;
+            height: 500px;
+            background: linear-gradient(45deg, #7c3aed, #10b981);
+            top: -100px;
+            left: -100px;
+            animation-delay: 0s;
+        }
+
+        .blob-2 {
+            width: 400px;
+            height: 400px;
+            background: linear-gradient(45deg, #10b981, #3b82f6);
+            bottom: -100px;
+            right: -100px;
+            animation-delay: -2s;
+        }
+
+        .blob-3 {
+            width: 300px;
+            height: 300px;
+            background: linear-gradient(45deg, #8b5cf6, #ec4899);
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            animation-delay: -4s;
+        }
+
+        .blob-4 {
+            width: 350px;
+            height: 350px;
+            background: linear-gradient(45deg, #f59e0b, #ef4444);
+            bottom: 20%;
+            left: 10%;
+            animation-delay: -6s;
+        }
+
+        .glass-morph {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(
+                135deg,
+                rgba(124, 58, 237, 0.1) 0%,
+                rgba(16, 185, 129, 0.05) 50%,
+                rgba(59, 130, 246, 0.1) 100%
+            );
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+        }
+
+        .floating-particles {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+        }
+
+        .particle {
+            position: absolute;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 50%;
+            animation: float-particle 15s linear infinite;
+        }
+
+        .particle:nth-child(1) {
+            width: 8px;
+            height: 8px;
+            top: 20%;
+            left: 10%;
+            animation-delay: 0s;
+        }
+
+        .particle:nth-child(2) {
+            width: 12px;
+            height: 12px;
+            top: 60%;
+            left: 80%;
+            animation-delay: -3s;
+        }
+
+        .particle:nth-child(3) {
+            width: 6px;
+            height: 6px;
+            top: 80%;
+            left: 20%;
+            animation-delay: -6s;
+        }
+
+        .particle:nth-child(4) {
+            width: 10px;
+            height: 10px;
+            top: 40%;
+            left: 90%;
+            animation-delay: -9s;
+        }
+
+        .particle:nth-child(5) {
+            width: 7px;
+            height: 7px;
+            top: 10%;
+            left: 70%;
+            animation-delay: -12s;
+        }
+
+        @keyframes float {
+            0%, 100% {
+                transform: translateY(0) rotate(0deg);
+                border-radius: 50%;
+            }
+            25% {
+                transform: translateY(-20px) rotate(90deg);
+                border-radius: 60% 40% 30% 70%;
+            }
+            50% {
+                transform: translateY(0) rotate(180deg);
+                border-radius: 40% 60% 70% 30%;
+            }
+            75% {
+                transform: translateY(20px) rotate(270deg);
+                border-radius: 30% 70% 60% 40%;
+            }
+        }
+
+        @keyframes float-particle {
+            0% {
+                transform: translateY(0) translateX(0) rotate(0deg);
+                opacity: 0;
+            }
+            10% {
+                opacity: 1;
+            }
+            90% {
+                opacity: 1;
+            }
+            100% {
+                transform: translateY(-100px) translateX(50px) rotate(360deg);
+                opacity: 0;
+            }
+        }
+
+        /* Контейнер с эффектом стекла */
         .container {
-            background: white;
-            padding: 30px;
-            border-radius: 10px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            background: rgba(26, 27, 46, 0.7);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 40px;
+            border-radius: 24px;
+            box-shadow: 
+                0 25px 50px rgba(0, 0, 0, 0.3),
+                0 0 0 1px rgba(255, 255, 255, 0.05),
+                inset 0 1px 0 rgba(255, 255, 255, 0.1);
+            width: 100%;
+            max-width: 700px;
+            position: relative;
+            overflow: visible;
+            z-index: 1;
         }
+
+        .container::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            
+            border-radius: 24px 24px 0 0;
+        }
+
+        .container::after {
+            content: '';
+            position: absolute;
+            top: 1px;
+            left: 1px;
+            right: 1px;
+            bottom: 1px;
+            border-radius: 23px;
+            background: linear-gradient(
+                135deg,
+                rgba(255, 255, 255, 0.1) 0%,
+                rgba(255, 255, 255, 0.05) 50%,
+                rgba(255, 255, 255, 0.1) 100%
+            );
+            pointer-events: none;
+            z-index: -1;
+        }
+
         h2 { 
-            color: #333;
+            color: var(--text);
             text-align: center;
             margin-bottom: 30px;
+            font-weight: 700;
+            font-size: 2rem;
+            position: relative;
+            display: inline-block;
+            width: 100%;
+            text-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
         }
+
+        h2::after {
+            content: '';
+            position: absolute;
+            bottom: -10px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 80px;
+            height: 3px;
+            background: linear-gradient(90deg, var(--primary), var(--secondary));
+            border-radius: 3px;
+        }
+
         #image-container { 
             margin-top: 20px; 
             text-align: center; 
+            opacity: 0;
+            transform: translateY(20px);
+            transition: opacity 0.5s, transform 0.5s;
+            width: 100%;
+            overflow: visible;
         }
+
+        #image-container.show {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
         #image-container img { 
             max-width: 100%; 
             height: auto; 
-            border: 1px solid #ddd;
-            border-radius: 5px;
+            border-radius: 12px;
             margin-bottom: 10px;
+            box-shadow: 
+                0 10px 30px rgba(0, 0, 0, 0.3),
+                0 0 0 1px rgba(255, 255, 255, 0.1);
+            animation: fadeIn 0.8s ease-out;
+            display: block;
+            margin-left: auto;
+            margin-right: auto;
         }
+
+        @keyframes fadeIn {
+            from { 
+                opacity: 0; 
+                transform: scale(0.95) translateY(10px); 
+            }
+            to { 
+                opacity: 1; 
+                transform: scale(1) translateY(0); 
+            }
+        }
+
         #loading { 
-            color: #007bff; 
+            color: var(--primary); 
             display: none;
             text-align: center;
-            font-weight: bold;
+            font-weight: 600;
+            padding: 20px;
+            border-radius: 12px;
+            background: rgba(255, 255, 255, 0.05);
+            margin: 20px 0;
+            animation: pulse 2s infinite;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
         }
+
+        .ai-loading {
+            color: var(--secondary) !important;
+        }
+
+        @keyframes pulse {
+            0% { 
+                opacity: 0.7;
+                box-shadow: 0 0 20px rgba(124, 58, 237, 0.3);
+            }
+            50% { 
+                opacity: 1;
+                box-shadow: 0 0 30px rgba(124, 58, 237, 0.6);
+            }
+            100% { 
+                opacity: 0.7;
+                box-shadow: 0 0 20px rgba(124, 58, 237, 0.3);
+            }
+        }
+
         .form-group {
-            margin-bottom: 20px;
+            margin-bottom: 25px;
+            position: relative;
         }
+
         label { 
             display: block;
-            margin-bottom: 8px;
-            font-weight: bold;
-            color: #555;
+            margin-bottom: 10px;
+            font-weight: 600;
+            color: var(--text);
+            font-size: 1rem;
         }
-        textarea { 
+
+        textarea, input { 
             width: 100%; 
-            padding: 12px;
-            border: 1px solid #ddd;
-            border-radius: 5px;
-            font-size: 14px;
+            padding: 16px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            font-size: 16px;
             resize: vertical;
             box-sizing: border-box;
+            background: rgba(255, 255, 255, 0.05);
+            color: var(--text);
+            transition: all 0.3s;
+            backdrop-filter: blur(10px);
         }
-        .checkbox-group {
+
+        textarea:focus, input:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 
+                0 0 0 3px rgba(124, 58, 237, 0.2),
+                inset 0 2px 4px rgba(0, 0, 0, 0.1);
+            background: rgba(255, 255, 255, 0.08);
+        }
+
+        .voice-input-container {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .voice-btn {
+            flex: 1;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            padding: 14px;
+            color: var(--text);
+            cursor: pointer;
             display: flex;
             align-items: center;
-            margin: 15px 0;
+            justify-content: center;
+            gap: 8px;
+            transition: all 0.3s;
+            font-weight: 500;
+            backdrop-filter: blur(10px);
         }
+
+        .voice-btn:hover {
+            background: var(--primary);
+            color: white;
+            transform: translateY(-2px);
+            box-shadow: 
+                0 8px 20px rgba(124, 58, 237, 0.3),
+                0 0 0 1px rgba(255, 255, 255, 0.1);
+        }
+
+        .voice-btn.recording {
+            background: var(--error);
+            animation: pulse 1.5s infinite;
+        }
+
+        .checkbox-group {
+            display: flex;
+            align-items: flex-start;
+            margin: 20px 0;
+            padding: 20px;
+            border-radius: 12px;
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
         .checkbox-group input {
-            margin-right: 10px;
-            transform: scale(1.2);
+            width: auto;
+            margin-right: 12px;
+            transform: scale(1.3);
+            margin-top: 4px;
         }
+
         .checkbox-group label {
             margin: 0;
             font-weight: normal;
+            flex: 1;
         }
+
         button { 
-            background: #007bff;
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
             color: white;
             border: none;
-            padding: 12px 30px;
-            border-radius: 5px;
+            padding: 18px 30px;
+            border-radius: 12px;
             cursor: pointer;
             font-size: 16px;
             width: 100%;
-            transition: background 0.3s;
+            transition: all 0.3s;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+            position: relative;
+            overflow: hidden;
+            backdrop-filter: blur(10px);
+            box-shadow: 
+                0 8px 25px rgba(124, 58, 237, 0.3),
+                0 0 0 1px rgba(255, 255, 255, 0.1);
         }
+
         button:hover {
-            background: #0056b3;
+            background: linear-gradient(135deg, var(--primary-dark), var(--primary));
+            transform: translateY(-3px);
+            box-shadow: 
+                0 12px 35px rgba(124, 58, 237, 0.4),
+                0 0 0 1px rgba(255, 255, 255, 0.1);
         }
+
+        button:active {
+            transform: translateY(-1px);
+        }
+
         button:disabled {
-            background: #6c757d;
+            background: rgba(255, 255, 255, 0.1);
             cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
         }
+
+        button::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 5px;
+            height: 5px;
+            background: rgba(255, 255, 255, 0.5);
+            opacity: 0;
+            border-radius: 100%;
+            transform: scale(1, 1) translate(-50%);
+            transform-origin: 50% 50%;
+        }
+
+        button:focus:not(:active)::after {
+            animation: ripple 1s ease-out;
+        }
+
+        @keyframes ripple {
+            0% {
+                transform: scale(0, 0);
+                opacity: 0.5;
+            }
+            100% {
+                transform: scale(20, 20);
+                opacity: 0;
+            }
+        }
+
         .download-links {
-            margin-top: 15px;
+            margin-top: 20px;
             text-align: center;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            justify-content: center;
         }
+
         .download-link {
-            display: inline-block;
-            margin: 5px 10px;
-            padding: 8px 15px;
-            background: #28a745;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            margin: 5px;
+            padding: 12px 20px;
+            background: linear-gradient(135deg, var(--secondary), #0da271);
             color: white;
             text-decoration: none;
-            border-radius: 4px;
+            border-radius: 8px;
             font-size: 14px;
-            transition: background 0.3s;
+            transition: all 0.3s;
+            font-weight: 500;
+            box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3);
         }
+
         .download-link:hover {
-            background: #218838;
+            background: linear-gradient(135deg, #0da271, var(--secondary));
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(16, 185, 129, 0.4);
         }
+
         .file-info {
-            background: #f8f9fa;
-            padding: 10px;
-            border-radius: 5px;
-            margin-top: 10px;
-            font-size: 12px;
-            color: #666;
+            background: rgba(255, 255, 255, 0.05);
+            padding: 20px;
+            border-radius: 12px;
+            margin-top: 15px;
+            font-size: 14px;
+            color: var(--text-secondary);
+            border-left: 4px solid var(--primary);
+            width: 100%;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
         }
+
         .error { 
-            color: #dc3545; 
-            background: #f8d7da;
-            padding: 10px;
-            border-radius: 5px;
-            border: 1px solid #f5c6cb;
+            color: var(--error); 
+            background: rgba(239, 68, 68, 0.1);
+            padding: 20px;
+            border-radius: 12px;
+            border: 1px solid rgba(239, 68, 68, 0.3);
+            margin-top: 15px;
+            animation: shake 0.5s;
+            width: 100%;
+            backdrop-filter: blur(10px);
         }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            10%, 30%, 50%, 70%, 90% { transform: translateX(-5px); }
+            20%, 40%, 60%, 80% { transform: translateX(5px); }
+        }
+
         .success { 
-            color: #155724; 
-            background: #d4edda;
-            padding: 10px;
-            border-radius: 5px;
-            border: 1px solid #c3e6cb;
+            color: var(--success); 
+            background: rgba(16, 185, 129, 0.1);
+            padding: 20px;
+            border-radius: 12px;
+            border: 1px solid rgba(16, 185, 129, 0.3);
+            margin-bottom: 15px;
+            width: 100%;
+            backdrop-filter: blur(10px);
         }
+
         .conversion-info {
-            background: #e7f3ff;
-            padding: 10px;
-            border-radius: 5px;
+            background: rgba(124, 58, 237, 0.1);
+            padding: 20px;
+            border-radius: 12px;
+            margin-top: 15px;
+            border-left: 4px solid var(--primary);
+            width: 100%;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .prompt-preview {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 20px;
+            border-radius: 12px;
+            margin-top: 15px;
+            border: 1px dashed rgba(255, 255, 255, 0.2);
+            display: none;
+            width: 100%;
+            backdrop-filter: blur(10px);
+        }
+
+        .prompt-preview.show {
+            display: block;
+            animation: slideDown 0.5s ease-out;
+        }
+
+        @keyframes slideDown {
+            from { opacity: 0; max-height: 0; }
+            to { opacity: 1; max-height: 500px; }
+        }
+
+        .prompt-preview h4 {
+            margin-bottom: 10px;
+            color: var(--primary);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .status-indicator {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 500;
+            background: rgba(255, 255, 255, 0.05);
+            margin-bottom: 10px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .status-recording {
+            background: rgba(239, 68, 68, 0.2);
+            color: var(--error);
+        }
+
+        .status-processing {
+            background: rgba(124, 58, 237, 0.2);
+            color: var(--primary);
+        }
+
+        .status-ai {
+            background: rgba(16, 185, 129, 0.2);
+            color: var(--secondary);
+        }
+
+        .tooltip {
+            position: relative;
+            display: inline-block;
+            margin-left: 5px;
+        }
+
+        .tooltip .tooltiptext {
+            visibility: hidden;
+            width: 200px;
+            background: rgba(26, 27, 46, 0.9);
+            color: var(--text);
+            text-align: center;
+            border-radius: 8px;
+            padding: 12px;
+            position: absolute;
+            z-index: 1000;
+            bottom: 125%;
+            left: 50%;
+            transform: translateX(-50%);
+            opacity: 0;
+            transition: opacity 0.3s;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            font-size: 12px;
+            font-weight: normal;
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .tooltip:hover .tooltiptext {
+            visibility: visible;
+            opacity: 1;
+        }
+
+        .generated-image {
+            max-width: 90% !important;
+            margin: 0 auto !important;
+            display: block !important;
+        }
+
+        .enhanced-prompt-text {
+            background: rgba(15, 15, 35, 0.8);
+            padding: 16px;
+            border-radius: 8px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+            line-height: 1.4;
+            white-space: pre-wrap;
+            word-break: break-word;
+            max-height: 300px;
+            overflow-y: auto;
+            backdrop-filter: blur(10px);
+        }
+
+        .use-enhanced-btn {
             margin-top: 10px;
-            border-left: 4px solid #007bff;
+            background: linear-gradient(135deg, var(--secondary), #0da271);
+            padding: 10px 20px;
+            font-size: 14px;
+            width: auto;
+            border-radius: 8px;
+            box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3);
+        }
+
+        .use-enhanced-btn:hover {
+            background: linear-gradient(135deg, #0da271, var(--secondary));
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(16, 185, 129, 0.4);
+        }
+
+        @media (max-width: 600px) {
+            .container {
+                padding: 25px;
+            }
+            
+            h2 {
+                font-size: 1.6rem;
+            }
+            
+            .voice-input-container {
+                flex-direction: column;
+            }
+            
+            .download-links {
+                flex-direction: column;
+                align-items: center;
+            }
+            
+            .download-link {
+                width: 100%;
+                justify-content: center;
+            }
+            
+            .generated-image {
+                max-width: 95% !important;
+            }
+
+            .liquid-blob {
+                transform: scale(0.8);
+            }
+        }
+
+        @media (max-width: 400px) {
+            .container {
+                padding: 20px;
+            }
+            
+            .generated-image {
+                max-width: 100% !important;
+            }
+
+            .liquid-blob {
+                transform: scale(0.6);
+            }
         }
     </style>
 </head>
 <body>
+    <!-- Анимированный фон Liquid Glass -->
+    <div class="liquid-bg">
+        <div class="liquid-blob blob-1"></div>
+        <div class="liquid-blob blob-2"></div>
+        <div class="liquid-blob blob-3"></div>
+        <div class="liquid-blob blob-4"></div>
+        <div class="glass-morph"></div>
+        <div class="floating-particles">
+            <div class="particle"></div>
+            <div class="particle"></div>
+            <div class="particle"></div>
+            <div class="particle"></div>
+            <div class="particle"></div>
+        </div>
+    </div>
+
     <div class="container">
-        <h2>🎨 Генератор Изображений Nano Banana</h2>
+        <h2>Генератор изображений для стола</h2>
 
         <form id="prompt-form">
             <div class="form-group">
-                <label for="prompt">Введите ваш запрос (Prompt):</label>
+                <label for="prompt">
+                    Введите ваш запрос (Prompt):
+                    <span class="tooltip">ℹ️
+                        <span class="tooltiptext">Опишите изображение, которое хотите создать. Вы также можете использовать голосовой ввод для удобства.</span>
+                    </span>
+                </label>
                 <textarea id="prompt" name="prompt" rows="3" 
-                          placeholder="Например: Астронавт, едущий на банане в стиле импрессионизма"></textarea>
+                          placeholder="Например: Кошка, спящая на луне"></textarea>
+                
+                <div class="voice-input-container">
+                    <button type="button" id="voice-btn" class="voice-btn">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M12 15C13.6569 15 15 13.6569 15 12V5C15 3.34315 13.6569 2 12 2C10.3431 2 9 3.34315 9 5V12C9 13.6569 10.3431 15 12 15Z" stroke="currentColor" stroke-width="2"/>
+                            <path d="M19 10V12C19 15.866 15.866 19 12 19C8.13401 19 5 15.866 5 12V10" stroke="currentColor" stroke-width="2"/>
+                            <path d="M12 19V22" stroke="currentColor" stroke-width="2"/>
+                        </svg>
+                        Голосовой ввод
+                    </button>
+                    
+                    <button type="button" id="enhance-btn" class="voice-btn">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M14.8284 14.8284C13.2663 16.3905 10.7337 16.3905 9.17157 14.8284C7.60948 13.2663 7.60948 10.7337 9.17157 9.17157C10.7337 7.60948 13.2663 7.60948 14.8284 9.17157" stroke="currentColor" stroke-width="2"/>
+                            <path d="M12 3H19V5H12V3Z" stroke="currentColor" stroke-width="2"/>
+                            <path d="M12 7H21V9H12V7Z" stroke="currentColor" stroke-width="2"/>
+                            <path d="M12 11H23V13H12V11Z" stroke="currentColor" stroke-width="2"/>
+                            <path d="M3 17H12V19H3V17Z" stroke="currentColor" stroke-width="2"/>
+                            <path d="M3 21H8V23H3V21Z" stroke="currentColor" stroke-width="2"/>
+                        </svg>
+                        Улучшить промпт AI
+                    </button>
+                </div>
+                
+                <div id="status-indicator" class="status-indicator" style="display: none;">
+                    <span id="status-text">Статус</span>
+                </div>
+            </div>
+
+            <div class="prompt-preview" id="prompt-preview">
+                <h4>
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M9 12L11 14L15 10M21 12C21 16.9706 16.9706 21 12 21C7.02944 21 3 16.9706 3 12C3 7.02944 7.02944 3 12 3C16.9706 3 21 7.02944 21 12Z" stroke="currentColor" stroke-width="2"/>
+                    </svg>
+                    Улучшенный промпт для DALL-E
+                </h4>
+                <div id="enhanced-prompt-text" class="enhanced-prompt-text"></div>
+                <button type="button" id="use-enhanced-btn" class="use-enhanced-btn">
+                    Использовать этот промпт
+                </button>
             </div>
 
             <div class="checkbox-group">
                 <input type="checkbox" id="convert-to-gcode" name="convert_to_gcode">
                 <label for="convert-to-gcode">
                     <strong>Конвертировать в G-code для ЧПУ</strong><br>
-                    <small style="color: #666;">(PNG → SVG → G-code, дополнительное время обработки)</small>
+                    <small style="color: var(--text-secondary);">(PNG → SVG → G-code, дополнительное время обработки)</small>
                 </label>
             </div>
 
@@ -165,6 +859,7 @@
         <div id="image-container"></div>
     </div>
 
+
     <script>
         const form = document.getElementById('prompt-form');
         const promptInput = document.getElementById('prompt');
@@ -172,7 +867,152 @@
         const imageContainer = document.getElementById('image-container');
         const loadingMessage = document.getElementById('loading');
         const submitBtn = document.getElementById('submit-btn');
+        const voiceBtn = document.getElementById('voice-btn');
+        const enhanceBtn = document.getElementById('enhance-btn');
+        const statusIndicator = document.getElementById('status-indicator');
+        const statusText = document.getElementById('status-text');
+        const promptPreview = document.getElementById('prompt-preview');
+        const enhancedPromptText = document.getElementById('enhanced-prompt-text');
+        const useEnhancedBtn = document.getElementById('use-enhanced-btn');
 
+        let recognition = null;
+        let isRecording = false;
+        let useEnhancedPrompt = false;
+        let currentEnhancedPrompt = '';
+
+        // Инициализация распознавания речи
+        if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
+            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+            recognition = new SpeechRecognition();
+            recognition.continuous = false;
+            recognition.interimResults = false;
+            recognition.lang = 'ru-RU';
+
+            recognition.onstart = function() {
+                isRecording = true;
+                voiceBtn.classList.add('recording');
+                statusIndicator.style.display = 'flex';
+                statusIndicator.className = 'status-indicator status-recording';
+                statusText.textContent = 'Запись голоса... Говорите сейчас';
+            };
+
+            recognition.onresult = function(event) {
+                const transcript = event.results[0][0].transcript;
+                promptInput.value = transcript;
+                isRecording = false;
+                voiceBtn.classList.remove('recording');
+                statusIndicator.style.display = 'none';
+            };
+
+            recognition.onerror = function(event) {
+                console.error('Speech recognition error', event.error);
+                isRecording = false;
+                voiceBtn.classList.remove('recording');
+                statusIndicator.style.display = 'none';
+                
+                if (event.error === 'not-allowed') {
+                    alert('Доступ к микрофону запрещен. Пожалуйста, разрешите использование микрофона в настройках браузера.');
+                }
+            };
+
+            recognition.onend = function() {
+                isRecording = false;
+                voiceBtn.classList.remove('recording');
+                statusIndicator.style.display = 'none';
+            };
+        } else {
+            voiceBtn.disabled = true;
+            voiceBtn.innerHTML = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 15C13.6569 15 15 13.6569 15 12V5C15 3.34315 13.6569 2 12 2C10.3431 2 9 3.34315 9 5V12C9 13.6569 10.3431 15 12 15Z" stroke="currentColor" stroke-width="2"/><path d="M19 10V12C19 15.866 15.866 19 12 19C8.13401 19 5 15.866 5 12V10" stroke="currentColor" stroke-width="2"/><path d="M12 19V22" stroke="currentColor" stroke-width="2"/><line x1="3" y1="3" x2="21" y2="21" stroke="currentColor" stroke-width="2"/></svg> Голосовой ввод не поддерживается';
+        }
+
+        // Функция для улучшения промпта через наш бэкенд
+        async function enhancePromptWithAI(userPrompt) {
+            try {
+                const response = await fetch('enhance-prompt.php', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        prompt: userPrompt
+                    })
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                const data = await response.json();
+                
+                if (data.success) {
+                    return data.enhanced_prompt;
+                } else {
+                    throw new Error(data.error || 'Failed to enhance prompt');
+                }
+            } catch (error) {
+                console.error('AI enhancement error:', error);
+                throw error;
+            }
+        }
+
+        // Обработчик кнопки голосового ввода
+        voiceBtn.addEventListener('click', function() {
+            if (!recognition) return;
+            
+            if (isRecording) {
+                recognition.stop();
+            } else {
+                recognition.start();
+            }
+        });
+
+        // Обработчик кнопки улучшения промпта
+        enhanceBtn.addEventListener('click', async function() {
+            const prompt = promptInput.value.trim();
+            if (prompt === "") {
+                alert("Пожалуйста, введите запрос для улучшения.");
+                return;
+            }
+
+            enhanceBtn.disabled = true;
+            statusIndicator.style.display = 'flex';
+            statusIndicator.className = 'status-indicator status-ai';
+            statusText.textContent = 'AI улучшает промпт... Это займет несколько секунд';
+
+            try {
+                // Используем ChatGPT для улучшения промпта через наш бэкенд
+                const enhancedPrompt = await enhancePromptWithAI(prompt);
+                
+                enhancedPromptText.textContent = enhancedPrompt;
+                currentEnhancedPrompt = enhancedPrompt;
+                promptPreview.classList.add('show');
+                
+                statusIndicator.style.display = 'none';
+            } catch (error) {
+                console.error('Prompt enhancement error:', error);
+                statusIndicator.style.display = 'none';
+                
+                // Fallback - используем шаблонный промпт если AI недоступен
+                const fallbackPrompt = `Ultra-minimalist black-and-white line art of ${prompt}. Only thick, bold, continuous black outlines — NO fills, NO colors, NO shading, NO inner details. Single-stroke style where possible, all paths closed and connected. Clean geometric shapes, high contrast, sharp edges, optimized for vector tracing and CNC G-code. White background, 1:1 aspect ratio, SVG-ready.`;
+                
+                enhancedPromptText.textContent = fallbackPrompt + "\n\n(Использован шаблонный промпт - AI временно недоступен)";
+                currentEnhancedPrompt = fallbackPrompt;
+                promptPreview.classList.add('show');
+                
+                alert('AI временно недоступен. Использован шаблонный промпт.');
+            } finally {
+                enhanceBtn.disabled = false;
+            }
+        });
+
+        // Обработчик кнопки использования улучшенного промпта
+        useEnhancedBtn.addEventListener('click', function() {
+            promptInput.value = currentEnhancedPrompt;
+            useEnhancedPrompt = true;
+            promptPreview.classList.remove('show');
+        });
+
+        // Обработчик отправки формы
         form.addEventListener('submit', async function(event) {
             event.preventDefault();
 
@@ -183,13 +1023,16 @@
             }
 
             imageContainer.innerHTML = '';
+            imageContainer.classList.remove('show');
             loadingMessage.style.display = 'block';
             submitBtn.disabled = true;
             submitBtn.textContent = 'Генерация...';
 
             try {
+                const finalPrompt = useEnhancedPrompt ? prompt : prompt;
+                
                 const requestData = { 
-                    prompt: prompt,
+                    prompt: finalPrompt,
                     convert_to_gcode: convertToGcodeCheckbox.checked
                 };
 
@@ -208,7 +1051,8 @@
                     if (data.image_url) {
                         const img = document.createElement('img');
                         img.src = data.image_url;
-                        img.alt = prompt;
+                        img.alt = finalPrompt;
+                        img.className = 'generated-image';
                         imageContainer.appendChild(img);
                     }
 
@@ -230,7 +1074,13 @@
                     if (data.web_url) {
                         downloadDiv.innerHTML += `
                             <a href="${data.web_url}" class="download-link" download="${data.file_name}">
-                                📥 Скачать PNG
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                    <path d="M12 16L12 8" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                                    <path d="M9 13L12 16L15 13" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                    <path d="M7 17V18C7 19.1046 7.89543 20 9 20H15C16.1046 20 17 19.1046 17 18V17" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                                    <rect x="3" y="4" width="18" height="14" rx="2" stroke="currentColor" stroke-width="2"/>
+                                </svg>
+                                Скачать PNG
                             </a>
                         `;
                     }
@@ -243,15 +1093,29 @@
                             <strong>✅ Конвертация завершена!</strong><br>
                             <div class="download-links">
                                 <a href="${data.conversion.svg_url}" class="download-link" download>
-                                    📥 Скачать SVG
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                        <path d="M12 16L12 8" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                                        <path d="M9 13L12 16L15 13" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                        <path d="M7 17V18C7 19.1046 7.89543 20 9 20H15C16.1046 20 17 19.1046 17 18V17" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                                        <rect x="3" y="4" width="18" height="14" rx="2" stroke="currentColor" stroke-width="2"/>
+                                    </svg>
+                                    Скачать SVG
                                 </a>
                                 <a href="${data.conversion.gcode_url}" class="download-link" download>
-                                    ⚙️ Скачать G-code
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                        <path d="M12 16L12 8" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                                        <path d="M9 13L12 16L15 13" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                        <path d="M7 17V18C7 19.1046 7.89543 20 9 20H15C16.1046 20 17 19.1046 17 18V17" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                                        <rect x="3" y="4" width="18" height="14" rx="2" stroke="currentColor" stroke-width="2"/>
+                                    </svg>
+                                    Скачать G-code
                                 </a>
                             </div>
                         `;
                         imageContainer.appendChild(conversionDiv);
                     }
+
+                    imageContainer.appendChild(downloadDiv);
 
                     // Сообщение об успехе
                     const successDiv = document.createElement('div');
@@ -261,11 +1125,17 @@
                          ' Конвертация выполнена.' : '');
                     imageContainer.insertBefore(successDiv, imageContainer.firstChild);
 
+                    // Показываем контейнер с анимацией
+                    setTimeout(() => {
+                        imageContainer.classList.add('show');
+                    }, 100);
+
                 } else {
                     const errorDiv = document.createElement('div');
                     errorDiv.className = 'error';
                     errorDiv.innerHTML = `❌ Ошибка: ${data.error || 'Неизвестная ошибка'}`;
                     imageContainer.appendChild(errorDiv);
+                    imageContainer.classList.add('show');
                 }
             } catch (error) {
                 console.error('Fetch error:', error);
@@ -273,10 +1143,12 @@
                 errorDiv.className = 'error';
                 errorDiv.innerHTML = `❌ Ошибка связи: ${error.message}`;
                 imageContainer.appendChild(errorDiv);
+                imageContainer.classList.add('show');
             } finally {
                 loadingMessage.style.display = 'none';
                 submitBtn.disabled = false;
                 submitBtn.textContent = 'Сгенерировать Изображение';
+                useEnhancedPrompt = false;
             }
         });
 
@@ -285,7 +1157,7 @@
                 if (!document.getElementById('conversion-hint')) {
                     const hint = document.createElement('div');
                     hint.id = 'conversion-hint';
-                    hint.style.cssText = 'color: #666; font-size: 12px; margin-top: 5px;';
+                    hint.style.cssText = 'color: var(--text-secondary); font-size: 12px; margin-top: 5px;';
                     hint.textContent = 'Конвертация займет дополнительное время (до 2 минут)';
                     this.parentNode.appendChild(hint);
                 }

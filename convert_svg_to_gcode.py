@@ -13,8 +13,6 @@ def clean_svg_namespaces(input_svg: str, cleaned_svg: str):
         with open(input_svg, 'r', encoding='utf-8') as f:
             svg_content = f.read()
 
-     
-        
         # 1. Удаляем ВСЕ xmlns объявления с префиксами (ns0:, inkscape: и т.д.)
         svg_content = re.sub(r'\s+xmlns:[a-zA-Z0-9]+="[^"]*"', '', svg_content)
         
@@ -33,29 +31,76 @@ def clean_svg_namespaces(input_svg: str, cleaned_svg: str):
         # 5. Удаляем возможные дублирующиеся xmlns
         svg_content = re.sub(r'xmlns="[^"]*"\s+xmlns="[^"]*"', 'xmlns="http://www.w3.org/2000/svg"', svg_content)
 
+        # 6. Удаляем невидимые элементы и стили, которые могут создавать лишние пути
+        svg_content = re.sub(r'<style[^>]*>.*?</style>', '', svg_content, flags=re.DOTALL)
+        svg_content = re.sub(r'display\s*:\s*none', '', svg_content)
+        svg_content = re.sub(r'visibility\s*:\s*hidden', '', svg_content)
+        
+        # 7. Удаляем пустые пути и группы
+        svg_content = re.sub(r'<path[^>]*d\s*=\s*"[\s,]*"[^>]*/>', '', svg_content)
+        svg_content = re.sub(r'<g[^>]*></g>', '', svg_content)
+
         # Записываем очищенный контент
         with open(cleaned_svg, 'w', encoding='utf-8') as f:
             f.write(svg_content)
 
-        
         # Проверяем валидность
         try:
             ET.fromstring(svg_content)
             return True
         except ET.ParseError as e:
-
+           
             return False
 
     except Exception as e:
-
+        
         return False
 
 
+def optimize_gcode_commands(gcode_file: str):
+    """Оптимизирует G-код для удаления лишних перемещений"""
+    try:
+        with open(gcode_file, 'r') as f:
+            lines = f.readlines()
+        
+        optimized_lines = []
+        last_command = None
+        last_position = None
+        
+        for line in lines:
+            line = line.strip()
+            if not line or line.startswith(';'):
+                optimized_lines.append(line + '\n')
+                continue
+                
+            # Удаляем дублирующиеся команды перемещения
+            if line.startswith('G0') or line.startswith('G1'):
+                if line == last_command:
+                    continue
+                    
+                # Проверяем изменение позиции
+                if last_position and line == last_position:
+                    continue
+                    
+                last_command = line
+                last_position = line
+            
+            optimized_lines.append(line + '\n')
+        
+        # Перезаписываем файл с оптимизированными командами
+        with open(gcode_file, 'w') as f:
+            f.writelines(optimized_lines)
+            
+    except Exception as e:
+        pass
+
+
 def find_output_file(output_gcode: str):
-    
+    """Поиск сгенерированного G-код файла"""
     # Проверяем прямое расположение
     if os.path.exists(output_gcode):
         full_path = os.path.abspath(output_gcode)
+        
         return True
     
     # Проверяем текущую рабочую директорию
@@ -64,20 +109,20 @@ def find_output_file(output_gcode: str):
     possible_path = os.path.join(current_dir, filename_only)
     
     if os.path.exists(possible_path):
-
+       
         return True
     
-
+    # Ищем любые G-код файлы в текущей директории
     current_dir = os.getcwd()
     gcode_files = [f for f in os.listdir(current_dir) if f.endswith('.gcode')]
     
     if gcode_files:
-
+      
         for file in gcode_files:
             full_path = os.path.join(current_dir, file)
             size = os.path.getsize(full_path)
-           
-
+            print(f"  {file} ({size} байт)")
+        return True
     
     return False
 
@@ -88,6 +133,7 @@ def convert_svg_to_gcode(input_svg: str, output_gcode: str,
                          cutting_speed: float = 1000,
                          passes: int = 1,
                          pass_depth: float = 1.0):
+    """Конвертирует SVG в G-код с оптимизацией против лишних линий"""
     
     if not os.path.exists(input_svg):
 
@@ -95,18 +141,18 @@ def convert_svg_to_gcode(input_svg: str, output_gcode: str,
 
     tmp_svg = os.path.splitext(output_gcode)[0] + "_clean.svg"
 
-    # Очищаем SVG от namespace
+    # Очищаем SVG от namespace и потенциально проблемных элементов
     if not clean_svg_namespaces(input_svg, tmp_svg):
 
         return False
 
     # Проверяем что временный файл создан и не пустой
     if not os.path.exists(tmp_svg) or os.path.getsize(tmp_svg) == 0:
-       
+        
         return False
 
     try:
-        
+        # Парсим SVG с дополнительными опциями
         curves = parse_file(tmp_svg)
         
         if not curves:
@@ -114,46 +160,43 @@ def convert_svg_to_gcode(input_svg: str, output_gcode: str,
             # Создаем пустой G-code файл
             with open(output_gcode, 'w') as f:
                 f.write("; Empty G-code file - no paths found in SVG\n")
-
-            # Ищем его сразу
             find_output_file(output_gcode)
             return True
 
 
-        # Компилируем в G-code с ВСЕМИ обязательными параметрами
+
+        # Компилируем в G-code с оптимизацией
         compiler = Compiler(
             interfaces.Gcode,
             movement_speed=movement_speed,
             cutting_speed=cutting_speed,
-            pass_depth=pass_depth  # Добавляем обязательный параметр
+            pass_depth=pass_depth
         )
 
+        # Добавляем кривые с проверкой
         compiler.append_curves(curves)
+        
+        # Компилируем в файл
         compiler.compile_to_file(output_gcode, passes=passes)
 
-    
+        # Оптимизируем G-код для удаления лишних команд
         if os.path.exists(output_gcode):
-            full_path = os.path.abspath(output_gcode)
-            file_size = os.path.getsize(output_gcode)
+            optimize_gcode_commands(output_gcode)
 
-
-            try:
-                with open(output_gcode, 'r') as f:
-                    for i, line in enumerate(f):
-                        if i >= 10:
-                            break
-                       
-                if file_size > 0:
-                    pass
-            except Exception as e:
-                print(f"   Не удалось прочитать содержимое: {e}")
-        else:
-            # Ищем в других местах
-            find_output_file(output_gcode)
             
+            # Показываем статистику
+            with open(output_gcode, 'r') as f:
+                lines = f.readlines()
+                gcode_lines = [l for l in lines if l.strip() and not l.startswith(';')]
+               
+                
+        # Ищем файл вывода
+        find_output_file(output_gcode)
+        
         return True
 
     except Exception as e:
+
         import traceback
         traceback.print_exc()
         return False
@@ -165,7 +208,7 @@ def convert_svg_to_gcode(input_svg: str, output_gcode: str,
 
 def main():
     if len(sys.argv) < 3:
-
+        
         sys.exit(1)
 
     input_svg = sys.argv[1]
@@ -180,15 +223,12 @@ def main():
         scale=scale,
         pass_depth=pass_depth
     )
-    
 
     if success:
-        # Финальный поиск файла
-        find_output_file(output_gcode)
+        pass
+    else:
 
-
-    
-    sys.exit(0 if success else 1)
+        sys.exit(1)
 
 
 if __name__ == "__main__":
