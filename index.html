@@ -1016,7 +1016,7 @@
         form.addEventListener('submit', async function(event) {
             event.preventDefault();
 
-            const prompt = promptInput.value.trim();
+            const prompt = "A single continuous thin black line on a perfectly white background. The line must function as a smooth guiding track for a rolling ball, with no breaks, no branches, no sharp angles, no discontinuities, and no changes in line thickness. The line begins by drawing one perfect circle as a single unbroken stroke. Without lifting or stopping, the same line continues inside the circle and forms a very simple ultra-minimal abstract suggestion of Cat, fully contained within the circle, and then reconnects smoothly back into the circle's path so the circle remains the only closed shape. Nothing may extend outside the circle. The entire artwork must be one uninterrupted path suitable for a physical rolling ball guide: absolutely no intersections, no overlaps, no loops, no dead-ends, no enclosed areas besides the main circle. Pure thin black line, perfectly smooth curvature, on an absolutely blank white background with no texture, no shading, no artifacts, no noise.";
             if (prompt === "") {
                 alert("Пожалуйста, введите запрос.");
                 return;
@@ -1029,7 +1029,7 @@
             submitBtn.textContent = 'Генерация...';
 
             try {
-                const finalPrompt = useEnhancedPrompt ? prompt : prompt;
+                const finalPrompt = "A single continuous thin black line on a perfectly white background. The line must function as a smooth guiding track for a rolling ball, with no breaks, no branches, no sharp angles, no discontinuities, and no changes in line thickness. The line begins by drawing one perfect circle as a single unbroken stroke. Without lifting or stopping, the same line continues inside the circle and forms a very simple ultra-minimal abstract suggestion of Cat, fully contained within the circle, and then reconnects smoothly back into the circle's path so the circle remains the only closed shape. Nothing may extend outside the circle. The entire artwork must be one uninterrupted path suitable for a physical rolling ball guide: absolutely no intersections, no overlaps, no loops, no dead-ends, no enclosed areas besides the main circle. Pure thin black line, perfectly smooth curvature, on an absolutely blank white background with no texture, no shading, no artifacts, no noise.";
                 
                 const requestData = { 
                     prompt: finalPrompt,

@@ -121,7 +121,7 @@ def find_output_file(output_gcode: str):
         for file in gcode_files:
             full_path = os.path.join(current_dir, file)
             size = os.path.getsize(full_path)
-            print(f"  {file} ({size} байт)")
+          
         return True
     
     return False
